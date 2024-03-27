@@ -2,11 +2,12 @@
  * Thanks to & modified from 
  * https://raw.githubusercontent.com/KOP-XIAO/QuantumultX/master/Scripts/streaming-ui-check.js
  * 
- * 脚本功能：检查节点是否支持以下流媒体服务：NetFlix、Disney、YouTuBe、Dazn、Param
+ * 脚本功能：检查节点是否支持以下流媒体服务：NetFlix、Disney、YouTuBe、Dazn、Param、ChatGPT
  * For Loon 373+ Only, 小于373版本会有bug
  */
 
-const NF_BASE_URL = "https://www.netflix.com/title/70143836";
+const NF_BASE_URL = "https://www.netflix.com/title/";
+const FILM_ID = 81280792
 const DISNEY_BASE_URL = 'https://www.disneyplus.com';
 const DISNEY_LOCATION_BASE_URL = 'https://disney.api.edge.bamgrid.com/graph/v1/device/graphql';
 const YTB_BASE_URL = "https://www.youtube.com/premium";
@@ -15,6 +16,9 @@ const Param_BASE_URL = "https://www.paramountplus.com/"
 
 const Discovery_token_BASE_URL = "https://us1-prod-direct.discoveryplus.com/token?deviceId=d1a4a5d25212400d1e6985984604d740&realm=go&shortlived=true"
 const Discovery_BASE_URL = "https://us1-prod-direct.discoveryplus.com/users/me"
+
+const BASE_URL_GPT = 'https://chat.openai.com/'
+const Region_URL_GPT = 'https://chat.openai.com/cdn-cgi/trace'
 
 var inputParams = $environment.params;
 var nodeName = inputParams.node;
@@ -29,19 +33,20 @@ let result = {
     "Disney": "<b>Disneyᐩ: </b>检测失败，请重试 ❗️",
     "Paramount" : "<b>Paramountᐩ: </b>检测失败，请重试 ❗️",
     "Discovery" : "<b>Discoveryᐩ: </b>检测失败，请重试 ❗️",
+    "ChatGPT" : "<b>ChatGPT: </b>检测失败，请重试 ❗️"
 }
 
 let arrow = " ➟ "
 
-Promise.all([ytbTest(),disneyLocation(),nfTest(),daznTest(),parmTest(),discoveryTest()]).then(value => {
-    let content = "--------------------------------------</br>"+([result["Dazn"],result["Discovery"],result["Paramount"],result["Disney"],result["Netflix"],result["YouTube"]]).join("</br></br>")
+Promise.all([ytbTest(),disneyLocation(),nfTest(FILM_ID),daznTest(),parmTest(),discoveryTest(),testChatGPT()]).then(value => {
+    let content = "--------------------------------------</br>"+([result["Dazn"],result["Discovery"],result["Paramount"],result["Disney"],result["Netflix"],result["YouTube"],result["ChatGPT"]]).join("</br></br>")
     content = content + "</br>--------------------------------------</br>"+"<font color=#CD5C5C>"+"<b>节点</b> ➟ " + nodeName+ "</font>"
     content =`<p style="text-align: center; font-family: -apple-system; font-size: large; font-weight: thin">` + content + `</p>`
     console.log(content);
     $done({"title":result["title"],"htmlMessage":content})
 }).catch (values => {
     console.log("reject:" + values);
-    let content = "--------------------------------------</br>"+([result["Dazn"],result["Discovery"],result["Paramount"],result["Disney"],result["Netflix"],result["YouTube"]]).join("</br></br>")
+    let content = "--------------------------------------</br>"+([result["Dazn"],result["Discovery"],result["Paramount"],result["Disney"],result["Netflix"],result["YouTube"],result["ChatGPT"]]).join("</br></br>")
     content = content + "</br>--------------------------------------</br>"+"<font color=#CD5C5C>"+"<b>节点</b> ➟ " + nodeName+ "</font>"
     content =`<p style="text-align: center; font-family: -apple-system; font-size: large; font-weight: thin">` + content + `</p>`
     $done({"title":result["title"],"htmlMessage":content})
@@ -333,10 +338,10 @@ function discoveryTest() {
     })
 }
 
-function nfTest() {
+function nfTest(filmId) {
     return new Promise((resolve, reject) => {
         let params = {
-            url: NF_BASE_URL,
+            url: NF_BASE_URL + filmId,
             node: nodeName,
             timeout: 8000, //ms
             headers: {
@@ -377,3 +382,54 @@ function nfTest() {
         })
     })
 }
+function testChatGPT() {
+    return new Promise((resolve, reject) =>{
+      let option = {
+        url: BASE_URL_GPT,
+        opts: opts1,
+        timeout: 2800,
+      }
+      $httpClient.get(option, (errormsg,response,data) => {
+        console.log("ChatGPT Main Test")
+        if (errormsg) {
+            console.log("ChatGPT request failed:" + errormsg);
+            resolve(errormsg);
+            return;
+        }
+        let resp = JSON.stringify(response)
+        let jdg = resp.indexOf("text/plain")
+        if(jdg == -1) {
+        let option1 = {
+          url: Region_URL_GPT,
+          opts: opts1,
+          timeout: 2800,
+        }
+        $httpClient.get(option1, (errormsg,response,data) => {
+          console.log("ChatGPT Region Test")
+          let region = response.body.split("loc=")[1].split("\n")[0]
+          console.log("ChatGPT Region: "+region)
+          let res = support_countryCodes.indexOf(region)
+          if (res != -1) {
+            result["ChatGPT"] = "<b>ChatGPT: </b>支持 "+arrow+ "⟦"+flags.get(region.toUpperCase())+"⟧ 🎉"
+            console.log("支持 ChatGPT")
+            resolve("支持 ChatGPT")
+            return
+          } else {
+            result["ChatGPT"] = "<b>ChatGPT: </b>未支持 🚫"
+            console.log("不支持 ChatGPT")
+            resolve("不支持 ChatGPT")
+            return
+          }
+        }, reason => {
+          console.log("Check-Error"+reason)
+          resolve("ChatGPT failed")
+        })
+      } else {
+        result["ChatGPT"] = "<b>ChatGPT: </b>未支持 🚫"
+        console.log("不支持 ChatGPT")
+        resolve("不支持 ChatGPT")
+      }
+      }, reason => {
+        console.log("ChatGPT-Error"+reason)
+        resolve("ChatGPT failed")
+      })})}
