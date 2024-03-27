@@ -346,98 +346,49 @@ function discoveryTest() {
 }
 
 function nfTest(filmId) {
-    // return new Promise((resolve, reject) => {
-    //     let params = {
-    //         url: NF_BASE_URL + filmId,
-    //         opts: opts,
-    //         // node: nodeName,
-    //         timeout: 8000, //ms
-    //         headers: {
-    //             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36',
-    //         }
-    //     }
-    //     $httpClient.get(params, (errormsg,response,data) => {
-    //         console.log("----------NetFlix--------------");
-    //         if (errormsg) {
-    //             console.log("NF request failed:" + errormsg);
-    //             resolve(errormsg);
-    //             return;
-    //         }
-    //         if (response.status == 403) {
-    //             result["Netflix"] = "<b>Netflix: </b>未支持 🚫"
-    //             resolve("403 Not Available");
-    //         } else if (response.status == 404) {
-    //             result["Netflix"] = "<b>Netflix: </b>支持自制剧集 ⚠️"
-    //             resolve("404 Not Found");
-    //         } else if (response.status == 200) {
-    //             console.log("NF request result:" + JSON.stringify(response.headers));
-    //             let ourl = response.headers['X-Originating-URL']
-    //             if (ourl == undefined) {
-    //                 ourl = response.headers['X-Originating-Url']
-    //             }
-    //             console.log("X-Originating-URL:" + ourl)
-    //             let region = ourl.split('/')[3]
-    //             region = region.split('-')[0];
-    //             if (region == 'title') {
-    //                 region = 'us'
-    //             }
-    //             result["Netflix"] = "<b>Netflix: </b>完整支持"+arrow+ "⟦"+flags.get(region.toUpperCase())+"⟧ 🎉"
-    //             resolve(region);
-    //         } else {
-    //             result["Netflix"] = "<b>Netflix: </b>检测失败 ❗️";
-    //             resolve(response.status)
-    //         }
-    //     })
-    // })
-    return new Promise((resolve, reject) =>{
-        let option = {
-          url: NF_BASE_URL + filmId,
-          opts: opts,
-          timeout: 5200,
-          headers: {
-            'User-Agent':
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36',
-          },
-        }
-        $task.fetch(option).then(response => {
-          //$notify("nf:"+response.statusCode)
-          console.log("nf:"+response.statusCode)
-          if (response.statusCode === 404) {
-            
-            result["Netflix"] = "<b>Netflix: </b>支持自制剧集 ⚠️"
-            console.log("nf:"+result["Netflix"])
-            resolve('Not Found')
-            return 
-          } else if (response.statusCode === 403) {
-            
-            //console.log("nfnf")
-            result["Netflix"] = "<b>Netflix: </b>未支持 🚫"
-            console.log("nf:"+result["Netflix"])
-            //$notify("nf:"+result["Netflix"])
-            resolve('Not Available')
-            return
-          } else if (response.statusCode === 200) {
-            let url = response.headers['X-Originating-URL']
-            let region = url.split('/')[3]
-            region = region.split('-')[0]
-            if (region == 'title') {
-              region = 'us'
+    return new Promise((resolve, reject) => {
+        let params = {
+            url: NF_BASE_URL + filmId,
+            opts: opts,
+            // node: nodeName,
+            timeout: 8000, //ms
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36',
             }
-            console.log("nf:"+region)
-            result["Netflix"] = "<b>Netflix: </b>完整支持"+arrow+ "⟦"+flags.get(region.toUpperCase())+"⟧ 🎉"
-            //$notify("nf:"+result["Netflix"])
-            resolve("nf:"+result["Netflix"])
-            return 
-          }
-          resolve("Netflix Test Error")
-        }, reason => {
-          result["Netflix"] = "<b>Netflix: </b>检测超时 🚦"
-          console.log(result["Netflix"])
-          resolve("timeout")
         }
-        )
-      }
-      )
+        $task.fetch(params).then(response => {
+            console.log("----------NetFlix--------------");
+            if (errormsg) {
+                console.log("NF request failed:" + errormsg);
+                resolve(errormsg);
+                return;
+            }
+            if (response.status == 403) {
+                result["Netflix"] = "<b>Netflix: </b>未支持 🚫"
+                resolve("403 Not Available");
+            } else if (response.status == 404) {
+                result["Netflix"] = "<b>Netflix: </b>支持自制剧集 ⚠️"
+                resolve("404 Not Found");
+            } else if (response.status == 200) {
+                console.log("NF request result:" + JSON.stringify(response.headers));
+                let ourl = response.headers['X-Originating-URL']
+                if (ourl == undefined) {
+                    ourl = response.headers['X-Originating-Url']
+                }
+                console.log("X-Originating-URL:" + ourl)
+                let region = ourl.split('/')[3]
+                region = region.split('-')[0];
+                if (region == 'title') {
+                    region = 'us'
+                }
+                result["Netflix"] = "<b>Netflix: </b>完整支持"+arrow+ "⟦"+flags.get(region.toUpperCase())+"⟧ 🎉"
+                resolve(region);
+            } else {
+                result["Netflix"] = "<b>Netflix: </b>检测失败 ❗️";
+                resolve(response.status)
+            }
+        })
+    })
 }
 // function testChatGPT() {
 //     return new Promise((resolve, reject) =>{
